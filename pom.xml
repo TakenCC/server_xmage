@@ -235,7 +235,7 @@
         <module>Mage.Common</module>
         <module>Mage.Server</module>
         <module>Mage.Sets</module>
-        <module>Mage.Client</module>
+        <module>Mage.API</module>
         <module>Mage.Plugins</module>
         <module>Mage.Server.Plugins</module>
         <module>Mage.Server.Console</module>

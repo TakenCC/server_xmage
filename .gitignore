@@ -14,11 +14,11 @@ syntax: glob
 */gamelogsJson
 */gamesHistory
 
-# Mage.Client
-Mage.Client/plugins/images
-Mage.Client/plugins/plugin.data
+# Mage.Client - REMOVED (replaced by REST API)
+# Mage.Client/plugins/images
+# Mage.Client/plugins/plugin.data
 # TODO: must save serverlist.txt to temporary files, not root folder
-Mage.Client/serverlist.txt
+# Mage.Client/serverlist.txt
 
 # Mage.Server
 Mage.Server/config/init.txt
