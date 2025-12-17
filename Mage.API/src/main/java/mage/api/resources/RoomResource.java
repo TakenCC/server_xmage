@@ -2,6 +2,7 @@ package mage.api.resources;
 
 import mage.MageException;
 import mage.api.config.JwtAuthFilter;
+import mage.api.dto.CreateTableRequest;
 import mage.api.dto.ErrorResponse;
 import mage.game.match.MatchOptions;
 import mage.game.tournament.TournamentOptions;
@@ -90,7 +91,7 @@ public class RoomResource {
     @POST
     @Path("/{roomId}/tables")
     public Response createTable(@PathParam("roomId") String roomIdStr, 
-                                MatchOptions matchOptions,
+                                CreateTableRequest request,
                                 @Context javax.ws.rs.container.ContainerRequestContext requestContext) {
         try {
             UUID roomId = UUID.fromString(roomIdStr);
@@ -102,11 +103,30 @@ public class RoomResource {
                         .build();
             }
 
-            if (matchOptions == null) {
+            if (request == null || request.getName() == null || request.getGameType() == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ErrorResponse("BAD_REQUEST", "Match options are required"))
+                        .entity(new ErrorResponse("BAD_REQUEST", "Name and gameType are required"))
                         .build();
             }
+
+            // Construir MatchOptions desde el DTO
+            MatchOptions matchOptions = new MatchOptions(
+                request.getName(), 
+                request.getGameType(), 
+                request.isMultiPlayer()
+            );
+            
+            if (request.getDeckType() != null) {
+                matchOptions.setDeckType(request.getDeckType());
+            }
+            
+            if (request.getPassword() != null) {
+                matchOptions.setPassword(request.getPassword());
+            }
+            
+            matchOptions.setLimited(request.isLimited());
+            matchOptions.setWinsNeeded(request.getWinsNeeded());
+            matchOptions.setFreeMulligans(request.getFreeMulligans());
 
             TableView table = mageServer.roomCreateTable(sessionId, roomId, matchOptions);
             

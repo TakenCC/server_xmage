@@ -2,6 +2,13 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [1.4.60] - 2025-12-16
+
+### Corregido
+- **RestCallbackHandler**: Corregido error de compilación al implementar `AsynchInvokerCallbackHandler`
+  - Agregado método faltante `handleCallback(Callback, boolean, boolean)` requerido por la interfaz
+  - Removida anotación `@Override` incorrecta del método `getClientSessionId()` que no forma parte de la interfaz
+
 ## [1.4.59] - 2024-XX-XX
 
 ### Agregado

@@ -14,20 +14,11 @@
     <name>Mage API</name>
 
     <dependencies>
+        <!-- JAX-RS API - MUST BE FIRST to override transitive dependencies -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>mage-server</artifactId>
-            <version>${mage-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>mage</artifactId>
-            <version>${mage-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>mage-common</artifactId>
-            <version>${mage-version}</version>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1.1</version>
         </dependency>
 
         <!-- Jersey JAX-RS -->
@@ -45,6 +36,59 @@
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>2.40</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>2.40</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>2.40</version>
+        </dependency>
+
+        <!-- Mage dependencies with JAX-RS exclusions -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mage-server</artifactId>
+            <version>${mage-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.containers</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mage</artifactId>
+            <version>${mage-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>mage-common</artifactId>
+            <version>${mage-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- JWT -->
@@ -68,6 +112,12 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>mage.api.Main</mainClass>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>java.util.Arrays.useLegacyMergeSort</key>
+                            <value>true</value>
+                        </systemProperty>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>

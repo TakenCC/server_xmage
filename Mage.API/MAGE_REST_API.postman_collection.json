@@ -1,0 +1,754 @@
+{
+	"info": {
+		"_postman_id": "mage-rest-api-2024",
+		"name": "MAGE REST API",
+		"description": "Colección de endpoints para probar la API REST del servidor MAGE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "sessionId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "roomId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tableId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "gameId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    pm.collectionVariables.set('sessionId', jsonData.sessionId);",
+									"    console.log('Token guardado:', jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpass\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión y obtiene un token JWT"
+					},
+					"response": []
+				},
+				{
+					"name": "Registro",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('token', jsonData.token);",
+									"    pm.collectionVariables.set('sessionId', jsonData.sessionId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"nuevousuario\",\n    \"password\": \"password123\",\n    \"email\": \"usuario@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario"
+					},
+					"response": []
+				},
+				{
+					"name": "Enviar Token Reset",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "usuario@example.com",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/send-reset-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"send-reset-token"
+							]
+						},
+						"description": "Envía un token de recuperación por email"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "email",
+									"value": "usuario@example.com",
+									"type": "text"
+								},
+								{
+									"key": "authToken",
+									"value": "123456",
+									"type": "text"
+								},
+								{
+									"key": "newPassword",
+									"value": "nuevapassword",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Restablece la contraseña usando el token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Salas (Rooms)",
+			"item": [
+				{
+					"name": "Obtener Sala Principal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var roomId = pm.response.text();",
+									"    pm.collectionVariables.set('roomId', roomId.replace(/\\\"|\\'/g, ''));",
+									"    console.log('Room ID guardado:', roomId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/rooms/main",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rooms",
+								"main"
+							]
+						},
+						"description": "Obtiene el ID de la sala principal"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Usuarios de Sala",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/rooms/{{roomId}}/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rooms",
+								"{{roomId}}",
+								"users"
+							]
+						},
+						"description": "Lista los usuarios en una sala"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Mesas de Sala",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 && pm.response.json().length > 0) {",
+									"    var tables = pm.response.json();",
+									"    if (tables[0].tableId) {",
+									"        pm.collectionVariables.set('tableId', tables[0].tableId);",
+									"        console.log('Table ID guardado:', tables[0].tableId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/rooms/{{roomId}}/tables",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rooms",
+								"{{roomId}}",
+								"tables"
+							]
+						},
+						"description": "Lista todas las mesas en una sala"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Mesa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"gameType\": \"CommanderFreeForAll\",\n    \"name\": \"Mi Mesa de Prueba\",\n    \"players\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rooms/{{roomId}}/tables",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rooms",
+								"{{roomId}}",
+								"tables"
+							]
+						},
+						"description": "Crea una nueva mesa (necesita MatchOptions completo)"
+					},
+					"response": []
+				},
+				{
+					"name": "Partidas Finalizadas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/rooms/{{roomId}}/finished-matches",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"rooms",
+								"{{roomId}}",
+								"finished-matches"
+							]
+						},
+						"description": "Obtiene las partidas finalizadas de una sala"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mesas (Tables)",
+			"item": [
+				{
+					"name": "Obtener Detalles de Mesa",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tables/{{tableId}}?roomId={{roomId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tables",
+								"{{tableId}}"
+							],
+							"query": [
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
+							]
+						},
+						"description": "Obtiene los detalles de una mesa específica"
+					},
+					"response": []
+				},
+				{
+					"name": "Unirse a Mesa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mi Nombre\",\n    \"playerType\": \"HUMAN\",\n    \"skill\": 0,\n    \"deckList\": null,\n    \"password\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tables/{{tableId}}/join?roomId={{roomId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tables",
+								"{{tableId}}",
+								"join"
+							],
+							"query": [
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
+							]
+						},
+						"description": "Se une a una mesa"
+					},
+					"response": []
+				},
+				{
+					"name": "Observar Mesa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tables/{{tableId}}/watch?roomId={{roomId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tables",
+								"{{tableId}}",
+								"watch"
+							],
+							"query": [
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
+							]
+						},
+						"description": "Observa una mesa sin unirse"
+					},
+					"response": []
+				},
+				{
+					"name": "Es Dueño de Mesa",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tables/{{tableId}}/is-owner?roomId={{roomId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tables",
+								"{{tableId}}",
+								"is-owner"
+							],
+							"query": [
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
+							]
+						},
+						"description": "Verifica si el usuario es dueño de la mesa"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Mesa",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tables/{{tableId}}?roomId={{roomId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tables",
+								"{{tableId}}"
+							],
+							"query": [
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
+							]
+						},
+						"description": "Elimina una mesa (solo si eres dueño)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Juegos (Games)",
+			"item": [
+				{
+					"name": "Obtener Estado del Juego",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var game = pm.response.json();",
+									"    if (game.gameId) {",
+									"        pm.collectionVariables.set('gameId', game.gameId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}"
+							]
+						},
+						"description": "Obtiene el estado actual de un juego"
+					},
+					"response": []
+				},
+				{
+					"name": "Unirse a Juego",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}/join",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}",
+								"join"
+							]
+						},
+						"description": "Se une a un juego"
+					},
+					"response": []
+				},
+				{
+					"name": "Observar Juego",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}/watch",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}",
+								"watch"
+							]
+						},
+						"description": "Observa un juego sin participar"
+					},
+					"response": []
+				},
+				{
+					"name": "Dejar de Observar",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}/watch",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}",
+								"watch"
+							]
+						},
+						"description": "Deja de observar un juego"
+					},
+					"response": []
+				},
+				{
+					"name": "Enviar Acción",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"playerAction\": \"PASS\",\n    \"data\": null,\n    \"playerId\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}/actions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}",
+								"actions"
+							]
+						},
+						"description": "Envía una acción del jugador (PASS, CONCEDE, etc.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Abandonar Juego",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/games/{{gameId}}/quit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"games",
+								"{{gameId}}",
+								"quit"
+							]
+						},
+						"description": "Abandona un juego"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
+

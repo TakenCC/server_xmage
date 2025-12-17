@@ -5,7 +5,7 @@ import mage.api.config.JwtAuthFilter;
 import mage.api.dto.ErrorResponse;
 import mage.api.dto.JoinTableRequest;
 import mage.cards.decks.DeckCardLists;
-import mage.game.GameException;
+import mage.constants.TableState;
 import mage.interfaces.MageServer;
 import mage.server.MageServerImpl;
 import mage.view.TableView;
@@ -96,6 +96,77 @@ public class TableResource {
                         .build();
             }
 
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ErrorResponse("BAD_REQUEST", "Name is required"))
+                        .build();
+            }
+
+            if (request.getPlayerType() == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ErrorResponse("BAD_REQUEST", "playerType is required. Valid values: HUMAN, COMPUTER_MAD, COMPUTER_MONTE_CARLO, COMPUTER_DRAFT_BOT"))
+                        .build();
+            }
+
+            // Intentar obtener información de la mesa para validaciones previas
+            TableView tableInfo = null;
+            try {
+                tableInfo = mageServer.roomGetTableById(roomId, tableId);
+                if (tableInfo == null) {
+                    logger.warn("Table not found: tableId=" + tableId + ", roomId=" + roomId);
+                    return Response.status(Response.Status.NOT_FOUND)
+                            .entity(new ErrorResponse("TABLE_NOT_FOUND", "Table not found"))
+                            .build();
+                }
+                
+                // Validar estado de la mesa
+                TableState tableState = tableInfo.getTableState();
+                if (tableState != TableState.WAITING) {
+                    logger.warn("Table is not in WAITING state: state=" + tableState + ", tableId=" + tableId);
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorResponse("TABLE_NOT_JOINABLE", "Table is not accepting new players. Current state: " + tableState))
+                            .build();
+                }
+                
+                // Contar asientos ocupados
+                long occupiedSeats = tableInfo.getSeats().stream()
+                    .filter(seat -> seat.getPlayerName() != null && !seat.getPlayerName().isEmpty())
+                    .count();
+                
+                logger.info("Table info: state=" + tableInfo.getTableState() + ", totalSeats=" + tableInfo.getSeats().size() + ", occupiedSeats=" + occupiedSeats + ", gameType=" + tableInfo.getGameType() + ", deckType=" + tableInfo.getDeckType());
+                
+                // Validar que deckList no sea null para mesas no-limited
+                if (request.getDeckList() == null && !tableInfo.isLimited()) {
+                    String deckType = tableInfo.getDeckType();
+                    logger.warn("Deck required for non-limited table: deckType=" + deckType);
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorResponse("DECK_REQUIRED", "Deck is required for this table. Deck type: " + deckType))
+                            .build();
+                }
+            } catch (MageException e) {
+                logger.error("Error retrieving table info", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(new ErrorResponse("INTERNAL_ERROR", "Failed to retrieve table information: " + e.getMessage()))
+                        .build();
+            } catch (Exception e) {
+                logger.warn("Could not retrieve table info before join attempt", e);
+            }
+
+            logger.info("Attempting to join table: tableId=" + tableId + ", roomId=" + roomId + ", name=" + request.getName() + ", playerType=" + request.getPlayerType() + ", deckList=" + (request.getDeckList() != null ? "provided" : "null"));
+
+            // Intentar cargar el deck antes de unirse para capturar errores de formato
+            if (request.getDeckList() != null) {
+                try {
+                    mage.cards.decks.Deck testDeck = mage.cards.decks.Deck.load(request.getDeckList(), true, true);
+                    logger.debug("Deck loaded successfully, card count: " + (testDeck != null ? testDeck.getCards().size() : 0));
+                } catch (Exception e) {
+                    logger.error("Error loading deck before join attempt", e);
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ErrorResponse("DECK_LOAD_ERROR", "Failed to load deck: " + e.getMessage()))
+                            .build();
+                }
+            }
+
             boolean success = mageServer.roomJoinTable(
                 sessionId,
                 roomId,
@@ -104,24 +175,37 @@ public class TableResource {
                 request.getPlayerType(),
                 request.getSkill(),
                 request.getDeckList(),
-                request.getPassword()
+                request.getPassword() != null ? request.getPassword() : ""
             );
 
             if (success) {
+                logger.info("Successfully joined table: tableId=" + tableId + ", name=" + request.getName());
                 return Response.ok().entity(new ErrorResponse("SUCCESS", "Successfully joined table")).build();
             } else {
+                // Intentar obtener más información sobre el error
+                String errorDetails = "Failed to join table.";
+                if (tableInfo != null) {
+                    errorDetails += " Table state: " + tableInfo.getState() + ", Seats: " + tableInfo.getSeats().size();
+                }
+                logger.warn("Failed to join table: tableId=" + tableId + ", roomId=" + roomId + ", name=" + request.getName() + ", playerType=" + request.getPlayerType() + ". " + errorDetails);
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ErrorResponse("JOIN_FAILED", "Failed to join table"))
+                        .entity(new ErrorResponse("JOIN_FAILED", errorDetails + " Possible reasons: table is full, table already started, invalid deck format, deck validation failed, wrong password, quit ratio too high, or rating too low. Check server logs for more details."))
                         .build();
             }
         } catch (IllegalArgumentException e) {
+            logger.error("Invalid argument in join table", e);
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse("BAD_REQUEST", "Invalid UUID format"))
+                    .entity(new ErrorResponse("BAD_REQUEST", "Invalid UUID format or parameter: " + e.getMessage()))
                     .build();
-        } catch (MageException | GameException e) {
+        } catch (MageException e) {
             logger.error("Error joining table", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("INTERNAL_ERROR", "Failed to join table: " + e.getMessage()))
+                    .build();
+        } catch (Exception e) {
+            logger.error("Unexpected error joining table", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("INTERNAL_ERROR", "Unexpected error: " + e.getMessage()))
                     .build();
         }
     }
@@ -239,7 +323,7 @@ public class TableResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorResponse("BAD_REQUEST", "Invalid UUID format"))
                     .build();
-        } catch (MageException | GameException e) {
+        } catch (MageException e) {
             logger.error("Error submitting deck", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("INTERNAL_ERROR", "Failed to submit deck: " + e.getMessage()))
@@ -274,7 +358,7 @@ public class TableResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorResponse("BAD_REQUEST", "Invalid UUID format"))
                     .build();
-        } catch (MageException | GameException e) {
+        } catch (MageException e) {
             logger.error("Error saving deck", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("INTERNAL_ERROR", "Failed to save deck: " + e.getMessage()))
